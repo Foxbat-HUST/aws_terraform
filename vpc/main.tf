@@ -1,59 +1,35 @@
 variable "region" {
   type        = string
   description = "vpc region"
-  default     = "ap-northeast-1"
 }
 variable "tags" {
   type        = map(string)
   description = "tags list"
-  default = {
-    author = "anpq"
-    tool   = "terraform"
-  }
 }
 variable "cidr_block" {
   type        = string
   description = "vpc cidr block"
-  default     = "192.168.0.0/16"
 }
 
 variable "ec2_data" {
   type        = map(string)
   description = "ec2 ami and type"
-  default = {
-    ami           = "ami-0d979355d03fa2522"
-    instance_type = "t2.micro"
-  }
 }
 
 variable "public_subnet_data" {
-  type        = list(map(string))
+  type = list(object({
+    cidr = string
+    az   = string
+  }))
   description = "public subnet cidr blocks and az"
-  default = [
-    {
-      cidr = "192.168.1.0/24"
-      az   = "ap-northeast-1a"
-    },
-    {
-      cidr = "192.168.2.0/24"
-      az   = "ap-northeast-1c"
-    }
-  ]
 }
 
 variable "private_subnet_data" {
-  type        = list(map(string))
+  type = list(object({
+    cidr = string
+    az   = string
+  }))
   description = "private subnet cidr blocks and az"
-  default = [
-    {
-      cidr = "192.168.3.0/24"
-      az   = "ap-northeast-1a"
-    },
-    {
-      cidr = "192.168.4.0/24"
-      az   = "ap-northeast-1c"
-    }
-  ]
 }
 
 terraform {
@@ -114,33 +90,33 @@ resource "aws_default_security_group" "defautl_sg" {
   vpc_id = aws_vpc.vpc.id
   ingress {
     description = "enable http"
-    protocol = "tcp"
-    from_port = 80
-    to_port = 80
-    cidr_blocks = [ "0.0.0.0/0" ]
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
     description = "enable http"
-    protocol = "tcp"
-    from_port = 80
-    to_port = 80
-    cidr_blocks = [ "0.0.0.0/0" ]
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     description = "enable ssh"
-    protocol = "tcp"
-    from_port = 22
-    to_port = 22
-    cidr_blocks = [ "0.0.0.0/0" ]
+    protocol    = "tcp"
+    from_port   = 22
+    to_port     = 22
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     description = "enable ping"
-    protocol = "icmp"
-    from_port = 8
-    to_port = 0
+    protocol    = "icmp"
+    from_port   = 8
+    to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -162,4 +138,8 @@ echo "<h1>hello message from host 02</h1>" > /var/www/html/index.html
 EOF
 }
 
+output "public_ip" {
+  value       = aws_instance.ec2.public_ip
+  description = "ec2 public ip"
+}
 
