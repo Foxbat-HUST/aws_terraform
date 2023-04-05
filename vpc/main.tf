@@ -32,6 +32,11 @@ variable "private_subnet_data" {
   description = "private subnet cidr blocks and az"
 }
 
+variable "ssh_key_path" {
+  type        = string
+  description = "absolute ssh private key location"
+}
+
 terraform {
   required_providers {
     aws = {
@@ -121,11 +126,18 @@ resource "aws_default_security_group" "defautl_sg" {
   }
 }
 
+resource "aws_key_pair" "ec2_ssh_key" {
+  key_name   = "ec2_terraform"
+  public_key = file(var.ssh_key_path)
+  tags = merge(var.tags, { name = "ssh key" })
+}
+
 resource "aws_instance" "ec2" {
   ami                         = var.ec2_data.ami
   instance_type               = var.ec2_data.instance_type
   availability_zone           = element(var.public_subnet_data, 0).az
   subnet_id                   = element(aws_subnet.public_subnets, 0).id
+  key_name                    = aws_key_pair.ec2_ssh_key.key_name
   associate_public_ip_address = true
   user_data                   = <<EOF
 #!/bin/bash

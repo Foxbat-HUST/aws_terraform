@@ -10,23 +10,23 @@ ec2_data = {
 }
 
 public_subnet_data = [
-    {
-      cidr = "192.168.1.0/24"
-      az   = "ap-northeast-1a"
-    },
-    {
-      cidr = "192.168.2.0/24"
-      az   = "ap-northeast-1c"
-    }
-  ]
+  {
+    cidr = "192.168.1.0/24"
+    az   = "ap-northeast-1a"
+  },
+  {
+    cidr = "192.168.2.0/24"
+    az   = "ap-northeast-1c"
+  }
+]
 
 private_subnet_data = [
-    {
-      cidr = "192.168.3.0/24"
-      az   = "ap-northeast-1a"
-    },
-    {
-      cidr = "192.168.4.0/24"
-      az   = "ap-northeast-1c"
-    }
-  ]
+  {
+    cidr = "192.168.3.0/24"
+    az   = "ap-northeast-1a"
+  },
+  {
+    cidr = "192.168.4.0/24"
+    az   = "ap-northeast-1c"
+  }
+]
