@@ -84,10 +84,20 @@ resource "aws_route_table" "public_subnet_route_table" {
   }
 }
 
+resource "aws_route_table" "private_subnet_route_table" {
+  vpc_id = aws_vpc.vpc.id
+}
+
 resource "aws_route_table_association" "public_subnet_route_table_association" {
   count          = length(aws_subnet.public_subnets)
   subnet_id      = element(aws_subnet.public_subnets, count.index).id
   route_table_id = aws_route_table.public_subnet_route_table.id
+}
+
+resource "aws_route_table_association" "private_subnet_route_table_association" {
+  count          = length(aws_subnet.private_subnets)
+  subnet_id      = element(aws_subnet.private_subnets, count.index).id
+  route_table_id = aws_route_table.private_subnet_route_table.id
 }
 
 
@@ -124,12 +134,20 @@ resource "aws_default_security_group" "defautl_sg" {
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  egress {
+    description = "enable ping"
+    protocol    = "icmp"
+    from_port   = 8
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_key_pair" "ec2_ssh_key" {
   key_name   = "ec2_terraform"
   public_key = file(var.ssh_key_path)
-  tags = merge(var.tags, { name = "ssh key" })
+  tags       = merge(var.tags, { name = "ssh key" })
 }
 
 resource "aws_instance" "ec2" {
@@ -148,6 +166,13 @@ systemctl enable apache2
 mkdir -p /var/www/html/
 echo "<h1>hello message from host 02</h1>" > /var/www/html/index.html
 EOF
+}
+
+resource "aws_instance" "private_ec2" {
+  ami               = var.ec2_data.ami
+  instance_type     = var.ec2_data.instance_type
+  availability_zone = element(var.private_subnet_data, 0).az
+  subnet_id         = element(aws_subnet.private_subnets, 0).id
 }
 
 output "public_ip" {
