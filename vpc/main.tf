@@ -12,7 +12,10 @@ variable "cidr_block" {
 }
 
 variable "ec2_data" {
-  type        = map(string)
+  type = object({
+    ami           = string
+    instance_type = string
+  })
   description = "ec2 ami and type"
 }
 
