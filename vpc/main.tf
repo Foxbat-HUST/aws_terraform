@@ -1,45 +1,3 @@
-variable "region" {
-  type        = string
-  description = "vpc region"
-}
-variable "tags" {
-  type        = map(string)
-  description = "tags list"
-}
-variable "cidr_block" {
-  type        = string
-  description = "vpc cidr block"
-}
-
-variable "ec2_data" {
-  type = object({
-    ami           = string
-    instance_type = string
-  })
-  description = "ec2 ami and type"
-}
-
-variable "public_subnet_data" {
-  type = list(object({
-    cidr = string
-    az   = string
-  }))
-  description = "public subnet cidr blocks and az"
-}
-
-variable "private_subnet_data" {
-  type = list(object({
-    cidr = string
-    az   = string
-  }))
-  description = "private subnet cidr blocks and az"
-}
-
-variable "ssh_key_path" {
-  type        = string
-  description = "absolute ssh private key location"
-}
-
 terraform {
   required_providers {
     aws = {
@@ -176,10 +134,5 @@ resource "aws_instance" "private_ec2" {
   instance_type     = var.ec2_data.instance_type
   availability_zone = element(var.private_subnet_data, 0).az
   subnet_id         = element(aws_subnet.private_subnets, 0).id
-}
-
-output "public_ip" {
-  value       = aws_instance.ec2.public_ip
-  description = "ec2 public ip"
 }
 
