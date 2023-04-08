@@ -14,11 +14,15 @@ variable "tags" {
 }
 
 variable "public_subnet_data" {
-  type = list(object({
+  type = object({
     cidr = string
     az   = string
-  }))
+  })
   description = "public subnet cidr blocks and az"
+  validation {
+    condition = length(var.public_subnet_data) >= 1
+    error_message = "at least one public subnet"
+  }
 }
 
 variable "private_subnet_data" {
