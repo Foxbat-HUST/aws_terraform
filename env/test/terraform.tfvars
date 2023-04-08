@@ -1,13 +1,10 @@
 region = "ap-northeast-1"
 tags = {
-  author = "anpq"
-  tool   = "terraform"
+    env = "test"
+    created_by = "terraform"
 }
+
 cidr_block = "192.168.0.0/16"
-ec2_data = {
-  ami           = "ami-0d979355d03fa2522"
-  instance_type = "t2.micro"
-}
 
 public_subnet_data = [
   {
