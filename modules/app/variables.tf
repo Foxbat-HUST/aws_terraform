@@ -31,12 +31,18 @@ variable "vpc_id" {
   description = "vpc id"
 }
 
-variable "public_subnet_id" {
-  type        = string
-  description = "public subnet id where public instance will locate"
+variable "public_subnet_data" {
+  type = object({
+    id   = string
+    cidr = string
+  })
+  description = "public subnet data (id & cidr) where public instance will locate"
 }
 
-variable "private_subnet_ids" {
-  type        = list(string)
-  description = "private subnet ids where private instance will locate"
+variable "private_subnets_data" {
+  type = list(object({
+    id   = string
+    cidr = string
+  }))
+  description = "private subnets data (id & cidr)"
 }

@@ -4,13 +4,24 @@ output "vpc_id" {
 }
 
 output "public_subnet_id" {
-  description = "public subject ids"
+  description = "public subject id"
   value       = aws_subnet.public_subnet.id
 }
 
-output "private_subnet_ids" {
+output "public_subnet_cidr" {
+  description = "public subnet cidr"
+  value       = aws_subnet.public_subnet.cidr_block
+}
+
+
+output "private_subnets_id" {
   description = "private subnet ids"
   value       = aws_subnet.private_subnets[*].id
+}
+
+output "private_subnets_cidr" {
+  description = "private subnets cidr"
+  value       = aws_subnet.private_subnets[*].cidr_block
 }
 
 output "default_route_table_id" {
