@@ -20,7 +20,7 @@ variable "public_subnet_data" {
   })
   description = "public subnet cidr blocks and az"
   validation {
-    condition = length(var.public_subnet_data) >= 1
+    condition     = length(var.public_subnet_data) >= 1
     error_message = "at least one public subnet"
   }
 }
