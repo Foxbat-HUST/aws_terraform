@@ -31,12 +31,16 @@ variable "vpc_id" {
   description = "vpc id"
 }
 
-variable "public_subnet_data" {
-  type = object({
+variable "public_subnets_data" {
+   type = list(object({
     id   = string
     cidr = string
-  })
-  description = "public subnet data (id & cidr) where public instance will locate"
+  }))
+  description = "public subnets data (id & cidr)"
+  validation {
+    condition = length(var.public_subnets_data) > 0
+    error_message = "public subnets data must be provided"
+  }
 }
 
 variable "private_subnets_data" {

@@ -23,6 +23,7 @@ locals {
     http_port = 80
   }
   all_ips = "0.0.0.0/0"
+  main_subnet = element(var.public_subnets_data, 0)
 }
 
 resource "aws_key_pair" "ssh_key" {
@@ -70,7 +71,7 @@ resource "aws_instance" "public_ec2" {
   instance_type               = var.instance_spec.type
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
-  subnet_id                   = var.public_subnet_data.id
+  subnet_id                   = local.main_subnet.id
   security_groups             = [aws_security_group.public_ec2_sg.id]
   tags                        = merge(var.tags, { name = "public instance" })
 }
@@ -87,7 +88,7 @@ resource "aws_security_group_rule" "prv_enable_ingress_ssh" {
   protocol          = local.protocol.tcp
   from_port         = local.protocol.ssh_port
   to_port           = local.protocol.ssh_port
-  cidr_blocks       = [var.public_subnet_data.cidr]
+  cidr_blocks       = [local.main_subnet.cidr]
 }
 
 resource "aws_security_group_rule" "prv_enable_ingress_ping" {
@@ -97,7 +98,7 @@ resource "aws_security_group_rule" "prv_enable_ingress_ping" {
   protocol          = local.protocol.icmp
   from_port         = 8
   to_port           = 0
-  cidr_blocks       = [var.public_subnet_data.cidr]
+  cidr_blocks       = [local.main_subnet.cidr]
 }
 
 

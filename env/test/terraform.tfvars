@@ -6,6 +6,16 @@ tags = {
 
 cidr_block = "192.168.0.0/16"
 
+
+subnets_data = [{
+    az           = "ap-northeast-1a"
+    public_cidr  = "192.168.1.0/24"
+    private_cidr = "192.168.2.0/24"
+    }, {
+    az           = "ap-northeast-1c"
+    public_cidr  = "192.168.3.0/24"
+    private_cidr = "192.168.4.0/24"
+  }]
 public_subnet_data = {
   cidr = "192.168.1.0/24"
   az   = "ap-northeast-1a"

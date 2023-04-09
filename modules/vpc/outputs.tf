@@ -3,25 +3,21 @@ output "vpc_id" {
   value       = aws_vpc.vpc.id
 }
 
-output "public_subnet_id" {
-  description = "public subject id"
-  value       = aws_subnet.public_subnet.id
+output "public_subnets_data" {
+  description = "public subnet data (id and cidr)"
+  value = [for i in range(length(aws_subnet.public_subnets)) : {
+    id   = element(aws_subnet.public_subnets, i).id
+    cidr = element(aws_subnet.public_subnets, i).cidr_block
+  }]
 }
 
-output "public_subnet_cidr" {
-  description = "public subnet cidr"
-  value       = aws_subnet.public_subnet.cidr_block
-}
 
-
-output "private_subnets_id" {
-  description = "private subnet ids"
-  value       = aws_subnet.private_subnets[*].id
-}
-
-output "private_subnets_cidr" {
-  description = "private subnets cidr"
-  value       = aws_subnet.private_subnets[*].cidr_block
+output "private_subnets_data" {
+  description = "private subnet data (id and cidr)"
+  value = [for i in range(length(aws_subnet.public_subnets)) : {
+    id   = element(aws_subnet.private_subnets, i).id
+    cidr = element(aws_subnet.private_subnets, i).cidr_block
+  }]
 }
 
 output "default_route_table_id" {
