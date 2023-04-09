@@ -111,6 +111,16 @@ resource "aws_security_group_rule" "prv_enable_ingress_ping" {
   cidr_blocks       = [local.main_subnet.cidr]
 }
 
+resource "aws_security_group_rule" "prv_enable_egress_ssh" {
+  security_group_id = aws_security_group.private_ec2_sg.id
+  description       = "enable egress ssh for private instance"
+  type              = local.sg.egress
+  protocol          = local.protocol.tcp
+  from_port         = local.protocol.http_port
+  to_port           = local.protocol.http_port
+  cidr_blocks       = [local.all_ips]
+}
+
 
 resource "aws_instance" "private_ec2s" {
   count           = length(var.private_subnets_data)

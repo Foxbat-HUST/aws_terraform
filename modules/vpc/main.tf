@@ -41,8 +41,16 @@ resource "aws_internet_gateway" "internet_gw" {
   tags   = var.tags
 }
 
-resource "aws_default_route_table" "vpc_default_route_table" {
-  default_route_table_id = aws_vpc.vpc.default_route_table_id
+resource "aws_eip" "nat_gw_eip" {
+  vpc  = true
+  tags = var.tags
+}
+
+resource "aws_nat_gateway" "nat_gw" {
+  allocation_id = aws_eip.nat_gw_eip.id
+  subnet_id     = element(aws_subnet.public_subnets, 0).id
+  tags          = var.tags
+  depends_on    = [aws_internet_gateway.internet_gw]
 }
 
 resource "aws_route_table" "public_subnets_route_table" {
@@ -51,10 +59,33 @@ resource "aws_route_table" "public_subnets_route_table" {
     cidr_block = local.all_ips
     gateway_id = aws_internet_gateway.internet_gw.id
   }
+  tags = var.tags
 }
 
 resource "aws_route_table_association" "public_subnets_route_table_association" {
   count          = length(aws_subnet.public_subnets)
   subnet_id      = element(aws_subnet.public_subnets, count.index).id
   route_table_id = aws_route_table.public_subnets_route_table.id
+}
+
+
+# resource "aws_default_route_table" "vpc_default_route_table" {
+#   default_route_table_id = aws_vpc.vpc.default_route_table_id
+#   tags                   = var.tags
+# }
+
+resource "aws_route_table" "private_subnet_route_table_with_nat_gw" {
+  vpc_id = aws_vpc.vpc.id
+  route {
+    cidr_block = local.all_ips
+    nat_gateway_id = aws_nat_gateway.nat_gw.id
+  }
+
+  tags = merge(var.tags, {name = "route table for private subnet with nat gw"})
+}
+
+resource "aws_route_table_association" "private_subnets_route_table_association" {
+  count          = length(aws_subnet.private_subnets)
+  subnet_id      = element(aws_subnet.private_subnets, count.index).id
+  route_table_id = aws_route_table.private_subnet_route_table_with_nat_gw.id
 }

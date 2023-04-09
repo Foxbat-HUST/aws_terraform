@@ -1,4 +1,5 @@
 this module create simple vpc with
-+ at least one public subnet
++ public subnet(s)
 + private subnet(s)
 + an internet gateway
++ a nat gateway
