@@ -22,7 +22,7 @@ locals {
     ssh_port  = 22
     http_port = 80
   }
-  all_ips = "0.0.0.0/0"
+  all_ips     = "0.0.0.0/0"
   main_subnet = element(var.public_subnets_data, 0)
 }
 
@@ -63,6 +63,16 @@ resource "aws_security_group_rule" "pub_enable_egress_ping" {
   protocol          = local.protocol.icmp
   from_port         = 8
   to_port           = 0
+  cidr_blocks       = var.private_subnets_data[*].cidr
+}
+
+resource "aws_security_group_rule" "pub_enable_egress_ssh" {
+  security_group_id = aws_security_group.public_ec2_sg.id
+  description       = "enable internal egress ssh for public instance"
+  type              = local.sg.egress
+  protocol          = local.protocol.tcp
+  from_port         = local.protocol.ssh_port
+  to_port           = local.protocol.ssh_port
   cidr_blocks       = var.private_subnets_data[*].cidr
 }
 
