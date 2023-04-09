@@ -50,3 +50,9 @@ variable "private_subnets_data" {
   }))
   description = "private subnets data (id & cidr)"
 }
+
+
+variable "name_prefix" {
+  type = string
+  description = "resource prefix name"
+}

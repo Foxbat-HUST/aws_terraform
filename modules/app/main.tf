@@ -18,9 +18,9 @@ locals {
   }
   protocol = {
     tcp       = "tcp"
-    icmp      = "icmp"
     ssh_port  = 22
     http_port = 80
+    HTTP      = "HTTP"
   }
   all_ips     = "0.0.0.0/0"
   main_subnet = element(var.public_subnets_data, 0)
@@ -46,26 +46,6 @@ resource "aws_security_group_rule" "pub_enable_ingress_ssh" {
   cidr_blocks       = [local.all_ips]
 }
 
-resource "aws_security_group_rule" "pub_enable_ingress_ping" {
-  security_group_id = aws_security_group.public_ec2_sg.id
-  description       = "enable ingress ssh for public instance"
-  type              = local.sg.ingress
-  protocol          = local.protocol.icmp
-  from_port         = 8
-  to_port           = 0
-  cidr_blocks       = [local.all_ips]
-}
-
-resource "aws_security_group_rule" "pub_enable_egress_ping" {
-  security_group_id = aws_security_group.public_ec2_sg.id
-  description       = "enable internal egress ping for public instance"
-  type              = local.sg.egress
-  protocol          = local.protocol.icmp
-  from_port         = 8
-  to_port           = 0
-  cidr_blocks       = var.private_subnets_data[*].cidr
-}
-
 resource "aws_security_group_rule" "pub_enable_egress_ssh" {
   security_group_id = aws_security_group.public_ec2_sg.id
   description       = "enable internal egress ssh for public instance"
@@ -73,6 +53,16 @@ resource "aws_security_group_rule" "pub_enable_egress_ssh" {
   protocol          = local.protocol.tcp
   from_port         = local.protocol.ssh_port
   to_port           = local.protocol.ssh_port
+  cidr_blocks       = var.private_subnets_data[*].cidr
+}
+
+resource "aws_security_group_rule" "pub_enable_egress_http" {
+  security_group_id = aws_security_group.public_ec2_sg.id
+  description       = "enable internal egress http for public instance"
+  type              = local.sg.egress
+  protocol          = local.protocol.tcp
+  from_port         = local.protocol.http_port
+  to_port           = local.protocol.http_port
   cidr_blocks       = var.private_subnets_data[*].cidr
 }
 
@@ -101,24 +91,25 @@ resource "aws_security_group_rule" "prv_enable_ingress_ssh" {
   cidr_blocks       = [local.main_subnet.cidr]
 }
 
-resource "aws_security_group_rule" "prv_enable_ingress_ping" {
+resource "aws_security_group_rule" "prv_enable_egress_http" {
   security_group_id = aws_security_group.private_ec2_sg.id
-  description       = "enable internal ingress ssh for private instance"
-  type              = local.sg.ingress
-  protocol          = local.protocol.icmp
-  from_port         = 8
-  to_port           = 0
-  cidr_blocks       = [local.main_subnet.cidr]
-}
-
-resource "aws_security_group_rule" "prv_enable_egress_ssh" {
-  security_group_id = aws_security_group.private_ec2_sg.id
-  description       = "enable egress ssh for private instance"
+  description       = "enable egress http for private instance"
   type              = local.sg.egress
   protocol          = local.protocol.tcp
   from_port         = local.protocol.http_port
   to_port           = local.protocol.http_port
   cidr_blocks       = [local.all_ips]
+}
+
+
+resource "aws_security_group_rule" "prv_enable_ingress_http" {
+  security_group_id = aws_security_group.private_ec2_sg.id
+  description       = "enable ingress http for private instance"
+  type              = local.sg.ingress
+  protocol          = local.protocol.tcp
+  from_port         = local.protocol.http_port
+  to_port           = local.protocol.http_port
+  cidr_blocks       = var.public_subnets_data[*].cidr
 }
 
 
@@ -130,5 +121,60 @@ resource "aws_instance" "private_ec2s" {
   subnet_id       = element(var.private_subnets_data, count.index).id
   security_groups = [aws_security_group.private_ec2_sg.id]
   tags            = merge(var.tags, { name = "private instance ${count.index + 1}" })
-  //user_data     = templatefile("$path.module/script.sh", { host : "${count.index + 1}" })
+  user_data       = templatefile("${path.module}/script.sh", { host : "${count.index + 1}" })
+}
+
+resource "aws_lb_target_group" "app_lb_target_grp" {
+  target_type = "instance"
+  name        = "${var.name_prefix}-lb-target-group"
+  protocol    = local.protocol.HTTP
+  port        = local.protocol.http_port
+  vpc_id      = var.vpc_id
+  health_check {
+    enabled = true
+    path    = "/"
+  }
+}
+
+resource "aws_lb_target_group_attachment" "app_lb_target_grp_attachments" {
+  count            = length(aws_instance.private_ec2s)
+  target_group_arn = aws_lb_target_group.app_lb_target_grp.arn
+  target_id        = element(aws_instance.private_ec2s, count.index).id
+  port             = local.protocol.http_port
+}
+
+
+resource "aws_security_group" "alb_security_group" {
+  vpc_id = var.vpc_id
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = local.protocol.tcp
+    cidr_blocks = [local.all_ips]
+  }
+
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = local.protocol.tcp
+    cidr_blocks = [local.all_ips]
+  }
+}
+
+resource "aws_lb" "app_lb" {
+  name            = "${var.name_prefix}-app-lb"
+  internal        = false
+  ip_address_type = "ipv4"
+  subnets         = var.public_subnets_data[*].id
+  security_groups = [aws_security_group.alb_security_group.id]
+}
+
+resource "aws_lb_listener" "app_lb_listener" {
+  load_balancer_arn = aws_lb.app_lb.arn
+  protocol          = local.protocol.HTTP
+  port              = local.protocol.http_port
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app_lb_target_grp.arn
+  }
 }

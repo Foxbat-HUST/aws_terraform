@@ -24,5 +24,6 @@ module "app" {
   public_subnets_data  = module.vpc.public_subnets_data
   private_subnets_data = module.vpc.private_subnets_data
   tags                 = var.tags
+  name_prefix          = "test"
 }
 
