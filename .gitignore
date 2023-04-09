@@ -1,3 +1,4 @@
 *.tfstate
 *.tfstate.backup
 **/providers/**
+env/test/.terraform.tfstate.lock.info

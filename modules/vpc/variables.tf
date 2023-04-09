@@ -13,18 +13,17 @@ variable "tags" {
   description = "tags list"
 }
 
-variable "public_subnet_data" {
+variable "subnets_data" {
   type = list(object({
-    cidr = string
-    az   = string
+    az           = string
+    private_cidr = string
+    public_cidr  = string
   }))
-  description = "public subnet cidr blocks and az"
-}
 
-variable "private_subnet_data" {
-  type = list(object({
-    cidr = string
-    az   = string
-  }))
-  description = "private subnet cidr blocks and az"
+  description = "private and public subnet for individual az"
+  validation {
+    condition     = length(var.subnets_data) > 0
+    error_message = "subnet(s) data must be provided"
+  }
+
 }
