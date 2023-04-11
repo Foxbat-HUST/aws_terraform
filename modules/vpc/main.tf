@@ -13,11 +13,13 @@ locals {
 
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = var.tags
+  }
 }
 
 resource "aws_vpc" "vpc" {
   cidr_block = var.cidr_block
-  tags       = var.tags
 }
 
 resource "aws_subnet" "public_subnets" {
@@ -25,7 +27,9 @@ resource "aws_subnet" "public_subnets" {
   cidr_block        = element(var.subnets_data, count.index).public_cidr
   availability_zone = element(var.subnets_data, count.index).az
   vpc_id            = aws_vpc.vpc.id
-  tags              = merge(var.tags, { name = "public subnet ${count.index + 1}" })
+  tags = {
+    name = "public subnet ${count.index + 1}"
+  }
 }
 
 resource "aws_subnet" "private_subnets" {
@@ -33,23 +37,22 @@ resource "aws_subnet" "private_subnets" {
   cidr_block        = element(var.subnets_data, count.index).private_cidr
   availability_zone = element(var.subnets_data, count.index).az
   vpc_id            = aws_vpc.vpc.id
-  tags              = merge(var.tags, { name = "private subnet ${count.index + 1}" })
+  tags = {
+    name = "private subnet ${count.index + 1}"
+  }
 }
 
 resource "aws_internet_gateway" "internet_gw" {
   vpc_id = aws_vpc.vpc.id
-  tags   = var.tags
 }
 
 resource "aws_eip" "nat_gw_eip" {
-  vpc  = true
-  tags = var.tags
+  vpc = true
 }
 
 resource "aws_nat_gateway" "nat_gw" {
   allocation_id = aws_eip.nat_gw_eip.id
   subnet_id     = element(aws_subnet.public_subnets, 0).id
-  tags          = var.tags
   depends_on    = [aws_internet_gateway.internet_gw]
 }
 
@@ -59,7 +62,6 @@ resource "aws_route_table" "public_subnets_route_table" {
     cidr_block = local.all_ips
     gateway_id = aws_internet_gateway.internet_gw.id
   }
-  tags = var.tags
 }
 
 resource "aws_route_table_association" "public_subnets_route_table_association" {
@@ -71,17 +73,18 @@ resource "aws_route_table_association" "public_subnets_route_table_association" 
 
 # resource "aws_default_route_table" "vpc_default_route_table" {
 #   default_route_table_id = aws_vpc.vpc.default_route_table_id
-#   tags                   = var.tags
 # }
 
 resource "aws_route_table" "private_subnet_route_table_with_nat_gw" {
   vpc_id = aws_vpc.vpc.id
   route {
-    cidr_block = local.all_ips
+    cidr_block     = local.all_ips
     nat_gateway_id = aws_nat_gateway.nat_gw.id
   }
 
-  tags = merge(var.tags, {name = "route table for private subnet with nat gw"})
+  tags = {
+    name = "route table for private subnet with nat gw"
+  }
 }
 
 resource "aws_route_table_association" "private_subnets_route_table_association" {

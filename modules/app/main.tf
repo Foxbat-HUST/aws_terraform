@@ -9,6 +9,9 @@ terraform {
 
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = var.tags
+  }
 }
 
 locals {
@@ -29,7 +32,9 @@ locals {
 resource "aws_key_pair" "ssh_key" {
   key_name   = var.ssh_key.name
   public_key = file(var.ssh_key.file_path)
-  tags       = merge(var.tags, { name = "ssh key" })
+  tags = {
+    name = "ssh key"
+  }
 }
 
 resource "aws_security_group" "public_ec2_sg" {
@@ -73,7 +78,9 @@ resource "aws_instance" "public_ec2" {
   associate_public_ip_address = true
   subnet_id                   = local.main_subnet.id
   security_groups             = [aws_security_group.public_ec2_sg.id]
-  tags                        = merge(var.tags, { name = "public instance" })
+  tags = {
+    name = "public instance"
+  }
 }
 
 
@@ -120,8 +127,10 @@ resource "aws_instance" "private_ec2s" {
   key_name        = aws_key_pair.ssh_key.key_name
   subnet_id       = element(var.private_subnets_data, count.index).id
   security_groups = [aws_security_group.private_ec2_sg.id]
-  tags            = merge(var.tags, { name = "private instance ${count.index + 1}" })
   user_data       = templatefile("${path.module}/script.sh", { host : "${count.index + 1}" })
+  tags = {
+    name = "private instance ${count.index + 1}"
+  }
 }
 
 resource "aws_lb_target_group" "app_lb_target_grp" {
@@ -151,13 +160,15 @@ resource "aws_security_group" "alb_security_group" {
     to_port     = 80
     protocol    = local.protocol.tcp
     cidr_blocks = [local.all_ips]
+    description = "enable ingress ssh connection"
   }
 
   egress {
     from_port   = 80
     to_port     = 80
     protocol    = local.protocol.tcp
-    cidr_blocks = [local.all_ips]
+    cidr_blocks = var.private_subnets_data[*].cidr
+    description = "enable egress ssh connection"
   }
 }
 
